@@ -6,7 +6,6 @@ var http = require('http');
 const fs = require('fs');
 
 const {SERVER_PORT, SERVER_HOSTNAME, AMBIENTE, SERVER_PORT_HTTPS, PKDIR, CERTDIR, CADIR } = require('./config');
-const { GetLocation } = require('./js/LocalizationManager');
 const app = express();
 app.use(cors())
 
@@ -54,16 +53,3 @@ app.get("/welcome", (req, res) => {
     res.status(200).send("Bienvenido!");
 })
 
-app.post("/topsecret", (req, res) => {
-
-    var position = GetLocation(1);
-    var response = 
-    {
-        position:position,
-        message: "este es un mensaje secreto",
-
-    }
-
-
-    res.status(200).json(response);
-})
