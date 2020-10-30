@@ -1,0 +1,23 @@
+{
+  "name": "server",
+  "version": "1.0.0",
+  "description": "programa desafío MELI - Front-End",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "env-cmd -f .env nodemon index"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://jordanfin@bitbucket.org/jordanfin/server.git"
+  },
+  "author": "Jordan Fingerhut",
+  "license": "ISC",
+  "homepage": "https://bitbucket.org/jordanfin/server#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "env-cmd": "^10.1.0",
+    "express": "^4.17.1",
+    "fs": "0.0.1-security"
+  }
+}
