@@ -1,9 +1,13 @@
 
 const express = require('express');
 const cors = require('cors');
+const axios = require('axios');
 var https = require('https');
 var http = require('http');
 const fs = require('fs');
+
+const ep =require ('./js/endpoints_parser');
+
 
 const {SERVER_PORT, SERVER_HOSTNAME, AMBIENTE, SERVER_PORT_HTTPS, PKDIR, CERTDIR, CADIR } = require('./config');
 const app = express();
@@ -52,4 +56,114 @@ app.get("/welcome", (req, res) => {
 
     res.status(200).send("Bienvenido!");
 })
+
+/**
+ * Endpoint que consulta productos a la API de items. 
+ * Devuelve los datos reestructurados para que los consuma el cliente.
+ */
+app.get("/api/items", async (req,res)=>{
+
+var search = {};
+var query = req.query;
+var q="";
+console.log(query.q==null);
+if (query.q!=null){
+  q = query.q;
+}
+
+console.log("query:" +JSON.stringify(query));
+
+  //Endpoint API búsqueda de Mercado Libre
+  await axios.post('https://api.mercadolibre.com/sites/MLA/search?q='+q)
+        .then(response=>{
+            if (response.data!=null){
+              var data = response.data;
+              var obj_categories = [];
+              
+              //controla que filters y values no sean nulos.
+              if (data.filters[0]!=null){
+                if (data.filters[0].values!=null){
+                  obj_categories = data.filters[0].values[0].path_from_root;
+                }
+              }
+              
+              var obj_items = data.results;
+
+              //Autor
+              search.author = ep.GetAuthor();
+              //categorías del producto
+              search.categories = ep.GetCategories(obj_categories);
+              //items
+              search.items = ep.GetItems(obj_items);
+            }
+            
+        })
+        .catch(error => {
+            console.log(error);
+            return res.status(500).json({msg:"No se ha podido realizar la conexión con la API de Mercado Libre.", error: error})
+        });
+
+  res.status(200).json({author:search.author, categories:search.categories, items:search.items});
+
+})
+
+app.get("/api/items/:id", async (req,res)=>{
+
+  var search = {};
+  var id = req.params.id;
+  console.log("id:" +id);
+  
+    //Endpoint API Mercado Libre. búsqueda de item por id
+     await axios.get('https://api.mercadolibre.com/items/'+id)
+           .then(response=>{
+               if (response.data!=null){
+                 var obj_item = response.data;
+  
+                 search.author = ep.GetAuthor();
+                 search.item = ep.GetItem(obj_item);
+                 search.picture = obj_item.thumbnail;
+                 search.condition = obj_item.condition;
+                 search.free_shipping = obj_item.shipping.free_shipping
+                 search.sold_quantity = obj_item.sold_quantity;
+                
+               }
+              
+           })
+           .catch(error => {
+               console.log(error);
+               return res.status(500).json({msg:"No se ha podido realizar la conexión con la API de Mercado Libre.", error: error})
+           });
+
+    //Endpoint API Mercado Libre. búsqueda de descripción del item
+    await axios.get('https://api.mercadolibre.com/items/'+id+'/description')
+           .then(response=>{
+               if (response.data!=null){
+                 var description = "";
+                 var obj_item = response.data;
+                 if (obj_item!=null){
+                  description = obj_item.plain_text;
+                 }
+                 search.description = description; 
+               }
+              
+           })
+           .catch(error => {
+               console.log(error);
+               return res.status(500).json({msg:"No se ha podido obtener la descripción del producto: "+id+".", error: error})
+           });
+  
+
+     res.status(200).json({
+          author:search.author,
+          categories:search.categories,
+          item:search.item,
+          picture: search.picture,
+          free_shipping: search.free_shipping,
+          sold_quantity: search.sold_quantity,
+          description: search.description
+        });
+  
+    
+  
+  })
 
