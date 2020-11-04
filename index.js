@@ -64,17 +64,34 @@ app.get("/welcome", (req, res) => {
 app.get("/api/items", async (req,res)=>{
 
 var search = {};
+var limit = 50;
+var offset=1;
 var query = req.query;
+
+//Si vienen parámetros, de búsqueda mejor.
+if (query.limit!=undefined || query.offset!=undefined){
+   offset = query.offset;
+   limit = query.limit;
+}
+
+console.log("query"+JSON.stringify(query));
+console.log("offset"+offset);
+console.log("limit"+limit);
 var q="";
 console.log(query.q==null);
 if (query.q!=null){
   q = query.q;
 }
 
-console.log("query:" +JSON.stringify(query));
+//console.log("query:" +JSON.stringify(query));
 
   //Endpoint API búsqueda de Mercado Libre
-  await axios.post('https://api.mercadolibre.com/sites/MLA/search?q='+q)
+  await axios.get('https://api.mercadolibre.com/sites/MLA/search?q='+q,{
+    params: {
+      offset: offset,
+      limit:limit
+    }
+  })
         .then(response=>{
             if (response.data!=null){
               var data = response.data;
@@ -100,70 +117,127 @@ console.log("query:" +JSON.stringify(query));
         })
         .catch(error => {
             console.log(error);
-            return res.status(500).json({msg:"No se ha podido realizar la conexión con la API de Mercado Libre.", error: error})
+            return res.status(500).json({msg:"Ocurrió un problema al consultar la API", error: error})
         });
 
   res.status(200).json({author:search.author, categories:search.categories, items:search.items});
 
 })
 
+
+
 app.get("/api/items/:id", async (req,res)=>{
 
   var search = {};
   var id = req.params.id;
   console.log("id:" +id);
+  var APIErrors={};
   
     //Endpoint API Mercado Libre. búsqueda de item por id
      await axios.get('https://api.mercadolibre.com/items/'+id)
-           .then(response=>{
+           .then(response=> {
                if (response.data!=null){
                  var obj_item = response.data;
   
                  search.author = ep.GetAuthor();
                  search.item = ep.GetItem(obj_item);
-                 search.picture = obj_item.thumbnail;
-                 search.condition = obj_item.condition;
+                 search.pictures = ep.GetPictures(obj_item.pictures);
+                 search.condition = (obj_item.condition=='new'?'Nuevo':'Usado');
                  search.free_shipping = obj_item.shipping.free_shipping
                  search.sold_quantity = obj_item.sold_quantity;
                 
                }
-              
+ 
            })
            .catch(error => {
                console.log(error);
-               return res.status(500).json({msg:"No se ha podido realizar la conexión con la API de Mercado Libre.", error: error})
+               APIErrors.error=error
            });
+          
 
-    //Endpoint API Mercado Libre. búsqueda de descripción del item
-    await axios.get('https://api.mercadolibre.com/items/'+id+'/description')
-           .then(response=>{
-               if (response.data!=null){
-                 var description = "";
-                 var obj_item = response.data;
-                 if (obj_item!=null){
-                  description = obj_item.plain_text;
-                 }
-                 search.description = description; 
-               }
-              
-           })
-           .catch(error => {
-               console.log(error);
-               return res.status(500).json({msg:"No se ha podido obtener la descripción del producto: "+id+".", error: error})
-           });
-  
+          if (APIErrors.error==null){
+            //Endpoint API Mercado Libre. búsqueda de descripción del item
+            await axios.get('https://api.mercadolibre.com/items/'+id+'/description')
+            .then(response=>{
+                if (response.data!=null){
+                  var description = "";
+                  var obj_item = response.data;
+                  if (obj_item!=null){
+                    description = obj_item.plain_text;
+                  }
+                  search.description = description; 
+                }
+                
+            })
+            .catch(error => {
+               //console.log(error);
+                APIErrors.error=error
+            });
 
-     res.status(200).json({
+          }
+          
+    if (APIErrors.error==null){
+      
+      res.status(200).json({
           author:search.author,
           categories:search.categories,
           item:search.item,
-          picture: search.picture,
+          pictures: search.pictures,
           free_shipping: search.free_shipping,
+          condition:search.condition,
           sold_quantity: search.sold_quantity,
           description: search.description
         });
+      
+      }else{
+        console.log("No se encuentra el elemento " + APIErrors.error);
+        
+        res.status(500).send({ APIErrors });
+      }
+
+  })
+
+
+
+app.get("/api/items/categories", async (req,res)=>{
+
+  var search = {};
+  var query = req.query;
+  var q="";
+  console.log(query.q==null);
+  if (query.q!=null){
+    q = query.q;
+  }
   
-    
+  console.log("query:" +JSON.stringify(query));
+  
+    //Endpoint API búsqueda de Mercado Libre
+    await axios.post('https://api.mercadolibre.com/sites/MLA/search?q='+q,{})
+          .then(response=>{
+              if (response.data!=null){
+                var data = response.data;
+                var obj_categories = [];
+                
+                //controla que filters y values no sean nulos.
+                if (data.filters[0]!=null){
+                  if (data.filters[0].values!=null){
+                    obj_categories = data.filters[0].values[0].path_from_root;
+                  }
+                }
+                
+                search.categories = ep.GetCategories(obj_categories);
+                
+              }
+              
+          })
+          .catch(error => {
+              console.log(error);
+              return res.status(500).json({msg:"No se ha podido realizar la conexión con la API de Mercado Libre.", error: error})
+          });
+  
+    res.status(200).json({categories:search.categories});
   
   })
+
+
 

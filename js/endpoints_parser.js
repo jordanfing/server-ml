@@ -43,7 +43,8 @@ module.exports = {
                 },
                 picture:obj_item.thumbnail,
                 condition:obj_item.condition,
-                free_shipping:obj_item.shipping.free_shipping
+                free_shipping:obj_item.shipping.free_shipping,
+                address: obj_item.address.state_name
 
             }
             items.push(item);
@@ -69,14 +70,19 @@ module.exports = {
             price:{
                 currency:obj_item.currency_id,
                 amount:amount,
-                decimals: decimals
-            }
+                decimals: Math.round(decimals)
+            },
+            
         }
    
 
         return item;
     },
 
+    /**
+     * Devuelve nombre y apellido del creador del programa.
+     * "Jordan Fingerhut"
+     */
     GetAuthor: function(){
 
         var author={
@@ -84,6 +90,16 @@ module.exports = {
             lastname:'Fingerhut',
           }
           return author;
+    },
+
+    GetPictures: function(pictures){
+        var myPictures=[];
+
+        pictures.forEach(picture =>{
+            myPictures.push(picture.url);
+        })
+
+        return myPictures;
     }
 
 }
