@@ -1,5 +1,8 @@
 
 
+/**
+ * Expone procedimientos para re-estructurar la información obtenida desde la API
+ */
 
 
 module.exports = {
@@ -53,7 +56,7 @@ module.exports = {
         return items;
     },
 
-/**
+    /**
      * Recibe un objeto item y devuelve una estructura simplificada
      * @param {Object} obj_item 
      */
@@ -92,6 +95,10 @@ module.exports = {
           return author;
     },
 
+    /**
+     * Devuelve las imágenes del producto
+     * @param {Array} pictures 
+     */
     GetPictures: function(pictures){
         var myPictures=[];
 

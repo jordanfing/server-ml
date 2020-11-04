@@ -5,11 +5,13 @@ const axios = require('axios');
 var https = require('https');
 var http = require('http');
 const fs = require('fs');
-
 const ep =require ('./js/endpoints_parser');
 
 
-const {SERVER_PORT, SERVER_HOSTNAME, AMBIENTE, SERVER_PORT_HTTPS, PKDIR, CERTDIR, CADIR } = require('./config');
+/**
+ * Datos de set-up
+ */
+const {SERVER_PORT, SERVER_HOSTNAME, AMBIENTE, SERVER_PORT_HTTPS, PKDIR, CERTDIR, CADIR, ML_API_ITEMS, ML_API_ITEM_DETAIL } = require('./config');
 const app = express();
 app.use(cors())
 
@@ -57,36 +59,38 @@ app.get("/welcome", (req, res) => {
     res.status(200).send("Bienvenido!");
 })
 
+
 /**
  * Endpoint que consulta productos a la API de items. 
  * Devuelve los datos reestructurados para que los consuma el cliente.
  */
 app.get("/api/items", async (req,res)=>{
 
+
 var search = {};
+//por defecto obtenemos los primeros 50 productos
 var limit = 50;
 var offset=1;
 var query = req.query;
 
-//Si vienen parámetros, de búsqueda mejor.
+//Si vienen parámetros de paginado, los utilizamos.
 if (query.limit!=undefined || query.offset!=undefined){
    offset = query.offset;
    limit = query.limit;
 }
 
 console.log("query"+JSON.stringify(query));
-console.log("offset"+offset);
-console.log("limit"+limit);
+console.log("offset "+offset);
+console.log("limit "+limit);
 var q="";
-console.log(query.q==null);
+//console.log(query.q==null);
 if (query.q!=null){
   q = query.q;
 }
 
-//console.log("query:" +JSON.stringify(query));
 
   //Endpoint API búsqueda de Mercado Libre
-  await axios.get('https://api.mercadolibre.com/sites/MLA/search?q='+q,{
+  await axios.get(ML_API_ITEMS+q,{
     params: {
       offset: offset,
       limit:limit
@@ -103,7 +107,7 @@ if (query.q!=null){
                   obj_categories = data.filters[0].values[0].path_from_root;
                 }
               }
-              
+              //lista de productos
               var obj_items = data.results;
 
               //Autor
@@ -125,7 +129,10 @@ if (query.q!=null){
 })
 
 
-
+/**
+ * Endpoint que consulta el detalle de un item. 
+ * Devuelve los datos reestructurados para que los consuma el cliente.
+ */
 app.get("/api/items/:id", async (req,res)=>{
 
   var search = {};
@@ -134,7 +141,7 @@ app.get("/api/items/:id", async (req,res)=>{
   var APIErrors={};
   
     //Endpoint API Mercado Libre. búsqueda de item por id
-     await axios.get('https://api.mercadolibre.com/items/'+id)
+     await axios.get(ML_API_ITEM_DETAIL+id)
            .then(response=> {
                if (response.data!=null){
                  var obj_item = response.data;
@@ -155,9 +162,10 @@ app.get("/api/items/:id", async (req,res)=>{
            });
           
 
+           //si no hubo error
           if (APIErrors.error==null){
             //Endpoint API Mercado Libre. búsqueda de descripción del item
-            await axios.get('https://api.mercadolibre.com/items/'+id+'/description')
+            await axios.get(ML_API_ITEM_DETAIL+id+'/description')
             .then(response=>{
                 if (response.data!=null){
                   var description = "";
@@ -175,7 +183,7 @@ app.get("/api/items/:id", async (req,res)=>{
             });
 
           }
-          
+    //si no hubo error      
     if (APIErrors.error==null){
       
       res.status(200).json({
@@ -198,46 +206,6 @@ app.get("/api/items/:id", async (req,res)=>{
   })
 
 
-
-app.get("/api/items/categories", async (req,res)=>{
-
-  var search = {};
-  var query = req.query;
-  var q="";
-  console.log(query.q==null);
-  if (query.q!=null){
-    q = query.q;
-  }
-  
-  console.log("query:" +JSON.stringify(query));
-  
-    //Endpoint API búsqueda de Mercado Libre
-    await axios.post('https://api.mercadolibre.com/sites/MLA/search?q='+q,{})
-          .then(response=>{
-              if (response.data!=null){
-                var data = response.data;
-                var obj_categories = [];
-                
-                //controla que filters y values no sean nulos.
-                if (data.filters[0]!=null){
-                  if (data.filters[0].values!=null){
-                    obj_categories = data.filters[0].values[0].path_from_root;
-                  }
-                }
-                
-                search.categories = ep.GetCategories(obj_categories);
-                
-              }
-              
-          })
-          .catch(error => {
-              console.log(error);
-              return res.status(500).json({msg:"No se ha podido realizar la conexión con la API de Mercado Libre.", error: error})
-          });
-  
-    res.status(200).json({categories:search.categories});
-  
-  })
 
 
 

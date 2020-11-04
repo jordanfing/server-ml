@@ -1,29 +1,28 @@
-# README #
+# INTRODUCCIÓN #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+¡Hola a todos! Mi nombre es Jordan Fingerhut. Soy Full-Stack Developer y acá les dejo el desafío Front-End para Mercado Libre.
 
-### What is this repository for? ###
+## Tecnologías usadas y versiones ##
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+### Cliente ###
 
-### How do I get set up? ###
+* NodeJs    v12.18.2
+* ReactJs  v17.0.1
+* CSS
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+### Servidor ###
 
-### Contribution guidelines ###
+* NodeJs    v12.18.2
+* Express   v4.17.1
 
-* Writing tests
-* Code review
-* Other guidelines
 
-### Who do I talk to? ###
+### Set up ###
 
-* Repo owner or admin
-* Other community or team contact
+* Clonar los repositorios cliente y servidor
+* En ambos repositorios ejecutar npm install y luego npm start
+
+
+### Contacto ###
+
+* fingerhutjordan@gmail.com
+* +54 9 299 470 4088
